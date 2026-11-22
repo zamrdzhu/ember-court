@@ -1,0 +1,613 @@
+/* Ember Court — the whole look: a dark surround, a green felt table
+   with a gold oval trim, ivory cards, and the four houses told apart by
+   colour and pip shape. The stage is a fixed 1280 by 800 box that
+   JavaScript scales to the window, so a 1280 by 800 screenshot is
+   exact. */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #101510;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #f2ead8;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* The stage: centred, scaled by JavaScript, never reflowed. */
+.stage {
+  position: absolute;
+  width: 1280px;
+  height: 800px;
+  background: radial-gradient(ellipse at 50% 42%, #2a7a45 0%, #1d5c33 55%, #143d22 100%);
+  overflow: hidden;
+  transform-origin: center center;
+  user-select: none;
+}
+
+.felt-oval {
+  position: absolute;
+  inset: 16px 22px;
+  border: 3px solid rgba(217, 165, 33, 0.85);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Top bar: score on the left, trump cycle on the right. */
+.topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 76px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 34px 0;
+}
+
+.score {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.score-row {
+  display: flex;
+  gap: 12px;
+  font-size: 17px;
+  letter-spacing: 0.04em;
+}
+
+.score-name {
+  font-weight: bold;
+  color: #ffd970;
+  min-width: 52px;
+}
+
+.score-trick {
+  margin-top: 2px;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  color: #cfe3cf;
+}
+
+.trump {
+  text-align: right;
+}
+
+.chips {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(10, 25, 14, 0.55);
+  border: 2px solid;
+  border-radius: 999px;
+  padding: 3px 10px 3px 6px;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 0.03em;
+}
+
+.chip-arrow {
+  color: #ffd970;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.trump-note {
+  margin-top: 4px;
+  font-size: 12.5px;
+  font-style: italic;
+  color: #cfe3cf;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Rook's hand: face-down backs fanned across the top. */
+.rook-label {
+  position: absolute;
+  top: 82px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 14px;
+  letter-spacing: 0.22em;
+  color: #e8dcc0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.rook-hand {
+  position: absolute;
+  top: 106px;
+  left: 0;
+  right: 0;
+  height: 102px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.rook-hand .card-back {
+  margin: 0 -9px;
+}
+
+/* The turn banner under Rook's hand. */
+.turn-banner {
+  position: absolute;
+  top: 222px;
+  left: 0;
+  right: 0;
+  height: 30px;
+  text-align: center;
+  font-size: 19px;
+  font-style: italic;
+  letter-spacing: 0.03em;
+  color: #ffe9a8;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+/* The middle row: log left, trick area centre, thought right. */
+.mid-row {
+  position: absolute;
+  top: 258px;
+  left: 0;
+  right: 0;
+  height: 210px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 40px;
+}
+
+.log {
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.log-line {
+  font-size: 14.5px;
+  line-height: 1.35;
+  color: #dceadc;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+
+.trick-area {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+.trick-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.slot-empty {
+  width: 96px;
+  height: 136px;
+  border: 2px dashed rgba(242, 234, 216, 0.45);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: rgba(242, 234, 216, 0.6);
+}
+
+.slot-tag {
+  font-size: 13px;
+  letter-spacing: 0.16em;
+  color: #e8dcc0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.vs {
+  font-size: 26px;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  color: #ffd970;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.thought {
+  width: 260px;
+  text-align: right;
+}
+
+.thought-label {
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #cfe3cf;
+  margin-bottom: 5px;
+}
+
+.thought-text {
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.4;
+  color: #ffe9a8;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.65);
+}
+
+/* The player's hand, fanned at the bottom. */
+.hand-label {
+  position: absolute;
+  bottom: 168px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 14px;
+  letter-spacing: 0.22em;
+  color: #e8dcc0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+.player-hand {
+  position: absolute;
+  bottom: 22px;
+  left: 0;
+  right: 0;
+  height: 140px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.player-hand .card {
+  margin: 0 -7px;
+  cursor: pointer;
+  transform: rotate(var(--fan, 0deg)) translateY(var(--lift, 0px));
+  transform-origin: bottom center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+
+.player-hand .card:hover {
+  transform: rotate(var(--fan, 0deg)) translateY(-18px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.55);
+  z-index: 5;
+}
+
+.player-hand .card.selected {
+  transform: rotate(var(--fan, 0deg)) translateY(-22px);
+  outline: 3px solid #ffd970;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(255, 217, 112, 0.25), 0 10px 22px rgba(0, 0, 0, 0.55);
+  z-index: 6;
+}
+
+.player-hand .card.disabled {
+  cursor: default;
+  filter: brightness(0.82);
+}
+
+.player-hand .card.disabled:hover {
+  transform: rotate(var(--fan, 0deg)) translateY(var(--lift, 0px));
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+}
+
+.keys-hint {
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  color: rgba(207, 227, 207, 0.75);
+}
+
+/* Cards: ivory faces, rounded corners, corner rank and pip, big centre
+   pip with the suit name under it. */
+.card {
+  position: relative;
+  background: linear-gradient(160deg, #fbf6e6 0%, #f3ecd4 60%, #e9dfc0 100%);
+  border: 1px solid #b8a888;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+  flex: none;
+}
+
+.card .corner {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+}
+
+.card .corner.tl {
+  top: 6px;
+  left: 7px;
+}
+
+.card .corner.br {
+  bottom: 6px;
+  right: 7px;
+  transform: rotate(180deg);
+}
+
+.card .corner .rank {
+  font-size: 15px;
+  font-weight: bold;
+  letter-spacing: 0.02em;
+}
+
+.card .corner .rank.underline {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.card-centre {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.card-centre .suit-name {
+  font-size: 15px;
+  font-weight: bold;
+  letter-spacing: 0.06em;
+}
+
+.card-centre .rank-word {
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  color: #6b5b3e;
+}
+
+/* Card backs: deep red with a gold ring and an E emblem. */
+.card-back {
+  width: 72px;
+  height: 102px;
+  flex: none;
+  background: linear-gradient(160deg, #8e1b26 0%, #6d121c 60%, #5a0e17 100%);
+  border: 1px solid #3d090f;
+  border-radius: 8px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-ring {
+  width: 52px;
+  height: 76px;
+  border: 2px solid #d9a521;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 2px rgba(217, 165, 33, 0.35);
+}
+
+.back-emblem {
+  font-size: 34px;
+  font-weight: bold;
+  color: #ffd970;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+/* Animations: a deal-in slide, a snap onto the table, a flip for a
+   revealed rival card. */
+@keyframes deal-in {
+  from {
+    transform: rotate(var(--fan, 0deg)) translateY(60px);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(var(--fan, 0deg)) translateY(var(--lift, 0px));
+    opacity: 1;
+  }
+}
+
+@keyframes snap-in {
+  from {
+    transform: translateY(-14px) scale(0.92);
+    opacity: 0.4;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes flip-in {
+  from {
+    transform: rotateY(90deg) scale(0.94);
+    opacity: 0.4;
+  }
+  to {
+    transform: rotateY(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+.deal-in {
+  animation: deal-in 0.35s ease both;
+}
+
+.snap-in {
+  animation: snap-in 0.22s ease both;
+}
+
+.flip-in {
+  animation: flip-in 0.3s ease both;
+}
+
+/* Overlays: semi-transparent dark, so the table shows faintly behind.
+   Hidden unless .show is set. */
+.overlay,
+.help-overlay {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 18, 10, 0.84);
+  z-index: 20;
+}
+
+.overlay.show,
+.help-overlay:not([hidden]) {
+  display: flex;
+}
+
+.overlay-card {
+  position: relative;
+  width: 760px;
+  max-height: 720px;
+  overflow: hidden;
+  background: rgba(16, 32, 20, 0.92);
+  border: 2px solid #d9a521;
+  border-radius: 16px;
+  padding: 34px 44px 28px;
+  text-align: center;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.6);
+}
+
+.emblems {
+  display: flex;
+  justify-content: center;
+  gap: 34px;
+  margin-bottom: 10px;
+}
+
+.emblem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: #e8dcc0;
+}
+
+.title {
+  font-size: 56px;
+  letter-spacing: 0.12em;
+  color: #f2ead8;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+}
+
+.title.win {
+  color: #ffd970;
+}
+
+.title.loss {
+  color: #b9b3a4;
+}
+
+.title.draw {
+  color: #cfe3cf;
+}
+
+.tagline {
+  margin-top: 8px;
+  font-size: 19px;
+  font-style: italic;
+  color: #e8dcc0;
+}
+
+.rules {
+  margin: 20px auto 0;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rules p {
+  font-size: 15.5px;
+  line-height: 1.45;
+  color: #dceadc;
+}
+
+.cta {
+  margin-top: 22px;
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 0.04em;
+  color: #ffd970;
+}
+
+.hint {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #cfe3cf;
+}
+
+.breakdown {
+  margin: 20px auto 0;
+  width: 420px;
+  border: 1px solid rgba(217, 165, 33, 0.6);
+  border-radius: 10px;
+  padding: 12px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.break-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 16.5px;
+  color: #f2ead8;
+}
+
+/* Rising ember dots on the victory screen. */
+.ember {
+  position: absolute;
+  bottom: 8px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ff9a3d;
+  box-shadow: 0 0 8px 2px rgba(255, 154, 61, 0.7);
+  animation: rise 3.2s ease-in infinite;
+  pointer-events: none;
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-260px);
+    opacity: 0;
+  }
+}
